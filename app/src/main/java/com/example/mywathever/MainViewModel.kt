@@ -29,9 +29,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Add a goal and persist it
-    fun addGoal(goalText: String) {
+    fun addGoal(goalText: String, priority: Int) {
         viewModelScope.launch {
-            repository.insert(GoalEntity(text = goalText))
+            repository.insert(GoalEntity(text = goalText, priority = priority))
         }
     }
 

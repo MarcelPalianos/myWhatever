@@ -7,5 +7,6 @@ data class GoalEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val text: String,
+    val priority: Int = 1,
     val isCompleted: Boolean = false
 )
