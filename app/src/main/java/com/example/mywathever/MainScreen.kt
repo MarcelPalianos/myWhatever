@@ -9,6 +9,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -27,6 +29,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun MainScreen(viewModel: MainViewModel = viewModel()) {
     val goalsList by viewModel.goals.collectAsState()
+    val progress by viewModel.progress.collectAsState()
+
     var showDialog by remember { mutableStateOf(false) }
     var newGoalText by remember { mutableStateOf("") }
 
@@ -38,6 +42,39 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 .padding(innerPadding)
                 .padding(8.dp)
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                Text(
+                    text = "Level ${progress.level}",
+                    color = Color.White,
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    LinearProgressIndicator(
+                        progress = { (progress.xp % 10) / 10f },
+                        modifier = Modifier
+                            .width(200.dp)
+                            .height(8.dp),
+                        color = Color.Green,
+                        trackColor = Color.Gray,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${progress.xp} XP",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
             // Existing button to create a new goal
             Button(onClick = { showDialog = true }) {
                 Text("New Goal")
