@@ -74,6 +74,13 @@ android {
         debugImplementation(libs.androidx.ui.tooling)
         debugImplementation(libs.androidx.ui.test.manifest)
         ksp(libs.androidx.room.compiler)
+        implementation(libs.androidx.navigation.compose)
 
     }
+}
+dependencies {
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
 }

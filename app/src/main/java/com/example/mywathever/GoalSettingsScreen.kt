@@ -1,0 +1,133 @@
+package com.example.mywathever
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GoalSettingsScreen(
+    goalId: Int,
+    navController: NavHostController,
+    viewModel: MainViewModel = viewModel()
+) {
+    // Retrieve the goal from your ViewModel.
+    val goal = viewModel.getGoalById(goalId)
+
+    // Local states for editable fields.
+    var goalText by remember { mutableStateOf(goal?.text ?: "") }
+    var xpValue by remember { mutableStateOf(goal?.priority?.toFloat() ?: 1f) }
+    var selectedType by remember { mutableStateOf(goal?.type ?: "Agility") }
+    var recurring by remember { mutableStateOf(goal?.recurring ?: false) }
+
+    // UI for editing the goal.
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Edit Goal") }) },
+        containerColor = Color.DarkGray
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            TextField(
+                value = goalText,
+                onValueChange = { goalText = it },
+                label = { Text("Goal") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "XP: ${xpValue.toInt()}",
+                color = Color.White,
+                fontSize = 16.sp
+            )
+            Slider(
+                value = xpValue,
+                onValueChange = { xpValue = it },
+                valueRange = 1f..10f,
+                steps = 8,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            // Dropdown for goal type.
+            val types = listOf("Agility", "Intelligence", "Wisdom", "Health", "Strength", "Charisma")
+            var expanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { expanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Type: $selectedType")
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    types.forEach { type ->
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedType = type
+                                expanded = false
+                            },
+                            text = { Text(text = type) }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            // Checkbox for recurring goal.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = recurring,
+                    onCheckedChange = { recurring = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color.Green,
+                        uncheckedColor = Color.White,
+                        checkmarkColor = Color.White
+                    )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Recurring Goal", color = Color.White, fontSize = 16.sp)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    // Create an updated goal object.
+                    val updatedGoal = goal?.copy(
+                        text = goalText,
+                        priority = xpValue.toInt(),
+                        type = selectedType,
+                        recurring = recurring
+                    )
+                    if (updatedGoal != null) {
+                        viewModel.updateGoal(updatedGoal)
+                    }
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Save Changes")
+            }
+        }
+    }
+}

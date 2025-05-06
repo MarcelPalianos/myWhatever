@@ -1,22 +1,22 @@
 package com.example.mywathever
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.*
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -25,73 +25,102 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel = viewModel()) {
+fun MainScreen(
+    navController: NavHostController,
+    viewModel: MainViewModel = viewModel()
+) {
     val goalsList by viewModel.goals.collectAsState()
     val progress by viewModel.progress.collectAsState()
 
-    var showDialog by remember { mutableStateOf(false) }
-    var newGoalText by remember { mutableStateOf("") }
-
     Scaffold(
-        containerColor = Color.DarkGray
+        containerColor = Color.DarkGray,
+        topBar = { TopAppBar(title = { Text("My Goals") }) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(8.dp)
         ) {
-            Column(
+            // Header: Level on left, two columns for stats on right.
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ){
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = "Level ${progress.level}",
                     color = Color.White,
-                    fontSize = 24.sp
+                    fontSize = 24.sp,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 Row(
+                    modifier = Modifier.weight(2f),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
-                ){
-                    LinearProgressIndicator(
-                        progress = { (progress.xp % 10) / 10f },
-                        modifier = Modifier
-                            .width(200.dp)
-                            .height(8.dp),
-                        color = Color.Green,
-                        trackColor = Color.Gray,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${progress.xp} XP",
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Agility: ${progress.speed}", color = Color.White, fontSize = 16.sp)
+                        Text(text = "Intelligence: ${progress.intelligence}", color = Color.White, fontSize = 16.sp)
+                        Text(text = "Wisdom: ${progress.wisdom}", color = Color.White, fontSize = 16.sp)
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Health: ${progress.health}", color = Color.White, fontSize = 16.sp)
+                        Text(text = "Strength: ${progress.strength}", color = Color.White, fontSize = 16.sp)
+                        Text(text = "Charisma: ${progress.charisma}", color = Color.White, fontSize = 16.sp)
+                    }
                 }
             }
+
+            // XP progress indicator.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LinearProgressIndicator(
+                    progress = { (progress.xp % 10) / 10f },
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(8.dp),
+                    color = Color.Green,
+                    trackColor = Color.Gray,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${progress.xp} XP",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
+
             HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
-            // Existing button to create a new goal
-            Button(onClick = { showDialog = true }) {
+
+            // "New Goal" button.
+            Button(onClick = { navController.navigate("createGoal") }) {
                 Text("New Goal")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Display the list of goals
+            // List of goals.
             LazyColumn {
                 items(goalsList) { goal ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { navController.navigate("goalSettings/${goal.id}") }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Check mark
                         Box(modifier = Modifier.scale(2f)) {
                             Checkbox(
                                 checked = goal.isCompleted,
@@ -101,25 +130,21 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                     uncheckedColor = Color.White,
                                     checkmarkColor = Color.White
                                 ),
-                                modifier = Modifier.size(32.dp) // Optional: Adjust size
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-
-                        // Column for goal name and XP value
                         Column {
                             Text(
                                 text = goal.text,
                                 fontSize = 18.sp,
                                 color = if (goal.isCompleted) Color.LightGray else Color.White,
-                                style = if (goal.isCompleted) {
+                                style = if (goal.isCompleted)
                                     LocalTextStyle.current.copy(textDecoration = TextDecoration.LineThrough)
-                                } else {
-                                    LocalTextStyle.current
-                                }
+                                else LocalTextStyle.current
                             )
                             Text(
-                                text = "${goal.priority} XP",
+                                text = "${goal.priority} XP - ${goal.type}",
                                 fontSize = 12.sp,
                                 color = Color.Green
                             )
@@ -130,66 +155,4 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
 
         }
     }
-
-    if (showDialog) {
-        var expanded by remember { mutableStateOf(false) }
-        var selectedValue by remember { mutableStateOf("1") } // default selection
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("New Goal") },
-            text = {
-                Column {
-                    TextField(
-                        value = newGoalText,
-                        onValueChange = { newGoalText = it },
-                        placeholder = { Text("Enter a new goal") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(
-                            onClick = { expanded = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Priority: $selectedValue")
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            (1..10).forEach { value ->
-                                DropdownMenuItem(onClick = {
-                                    selectedValue = value.toString()
-                                    expanded = false
-                                },
-                                    text = { Text(text = value.toString()) }
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newGoalText.isNotBlank()) {
-                            // Pass the priority as an integer to the ViewModel
-                            viewModel.addGoal(newGoalText, selectedValue.toInt())
-                            newGoalText = ""
-                        }
-                        showDialog = false
-                    }
-                ) {
-                    Text("Create")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
 }
